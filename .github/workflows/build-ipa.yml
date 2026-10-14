@@ -32,6 +32,8 @@ jobs:
           s,n=re.subn(r'shellScript = "PATH=.*?";', 'shellScript = "exit 0";', s, count=1)
           assert n==1
           p.write_text(s)
+          p=Path("src/build-macos-one-click.sh")
+          p.write_text(p.read_text().replace("\r\n", "\n").replace("\r", "\n"))
           PY
           grep -q insert_after_once src/patch_vendor.py
           grep -q projectFormat src/project.yml
@@ -42,14 +44,16 @@ jobs:
           cd src
           chmod +x build-macos-one-click.sh
           ./build-macos-one-click.sh
-      - uses: actions/upload-artifact@v4
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
         with:
           name: DeviceMatrix-one-click-ipa
           path: src/dist-one-click/DeviceMatrix-one-click.ipa
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@v4
+      - name: Upload build evidence
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: DeviceMatrix-build-evidence
           path: |
