@@ -15,6 +15,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path("src/project.yml")
           s=p.read_text()
           s=s.replace("options:\n", 'options:\n  xcodeVersion: "15.3"\n  projectFormat: xcode15_3\n', 1)
@@ -26,9 +27,15 @@ jobs:
           for n in ["source_block","resource_block","group_block","resources_block"]:
               s=s.replace(n+" = insert_once(", n+" = insert_after_once(", 1)
           p.write_text(s)
+          p=Path("src/vendor/TrollFools/TrollFools.xcodeproj/project.pbxproj")
+          s=p.read_text()
+          s,n=re.subn(r'shellScript = "PATH=.*?";', 'shellScript = "exit 0";', s, count=1)
+          assert n==1
+          p.write_text(s)
           PY
           grep -q insert_after_once src/patch_vendor.py
           grep -q projectFormat src/project.yml
+          grep -q 'shellScript = "exit 0"' src/vendor/TrollFools/TrollFools.xcodeproj/project.pbxproj
       - name: Build one-click IPA
         shell: bash
         run: |
