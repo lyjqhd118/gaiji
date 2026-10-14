@@ -21,7 +21,7 @@ jobs:
           mkdir -p src
           unzip -q DeviceMatrix-cloud-source-v3.zip -d src
 
-      - name: Pin Xcode 15 project format
+      - name: Pin Xcode 15 project format and linker settings
         shell: bash
         run: |
           python3 - <<'PY'
@@ -30,9 +30,11 @@ jobs:
           s = p.read_text()
           marker = "options:\n"
           s = s.replace(marker, marker + '  xcodeVersion: "15.3"\n  projectFormat: xcode15_3\n', 1)
+          s = s.replace("      OTHER_LDFLAGS:\n        - -lcommonCrypto\n", "")
           p.write_text(s)
           PY
           grep -n "projectFormat" src/project.yml
+          if grep -q "commonCrypto" src/project.yml; then echo "unexpected commonCrypto linker flag" >&2; exit 1; fi
 
       - name: Build one-click IPA
         shell: bash
