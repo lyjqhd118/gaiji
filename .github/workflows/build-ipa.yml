@@ -9,7 +9,7 @@ jobs:
       - run: brew install xcodegen ldid
       - run: |
           mkdir -p src
-          unzip -q DeviceMatrix-cloud-source-v3.zip -d src
+          unzip -q DeviceMatrix-cloud-source-v5.zip -d src
       - name: Fix generated source
         shell: bash
         run: |
