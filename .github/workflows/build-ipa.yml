@@ -1,59 +1,48 @@
 name: Build DeviceMatrix IPA
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: macos-14
     timeout-minutes: 45
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install macOS build tools
-        run: brew install xcodegen ldid
-
-      - name: Extract corrected source bundle
-        run: |
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen ldid
+      - run: |
           mkdir -p src
           unzip -q DeviceMatrix-cloud-source-v3.zip -d src
-
-      - name: Pin Xcode 15 project format and linker settings
+      - name: Fix generated source
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("src/project.yml")
-          s = p.read_text()
-          marker = "options:\n"
-          s = s.replace(marker, marker + '  xcodeVersion: "15.3"\n  projectFormat: xcode15_3\n', 1)
-          s = s.replace("      OTHER_LDFLAGS:\n        - -lcommonCrypto\n", "")
+          p=Path("src/project.yml")
+          s=p.read_text()
+          s=s.replace("options:\n", 'options:\n  xcodeVersion: "15.3"\n  projectFormat: xcode15_3\n', 1)
+          s=s.replace("      OTHER_LDFLAGS:\n        - -lcommonCrypto\n", "")
+          p.write_text(s)
+          p=Path("src/patch_vendor.py")
+          s=p.read_text()
+          s=s.replace("def patch_project", "def insert_after_once(t,m,a): return t.replace(m,m+a,1)\n\ndef patch_project", 1)
+          for n in ["source_block","resource_block","group_block","resources_block"]:
+              s=s.replace(n+" = insert_once(", n+" = insert_after_once(", 1)
           p.write_text(s)
           PY
-          grep -n "projectFormat" src/project.yml
-          if grep -q "commonCrypto" src/project.yml; then echo "unexpected commonCrypto linker flag" >&2; exit 1; fi
-
+          grep -q insert_after_once src/patch_vendor.py
+          grep -q projectFormat src/project.yml
       - name: Build one-click IPA
         shell: bash
         run: |
           cd src
           chmod +x build-macos-one-click.sh
           ./build-macos-one-click.sh
-
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: DeviceMatrix-one-click-ipa
           path: src/dist-one-click/DeviceMatrix-one-click.ipa
           if-no-files-found: error
           retention-days: 7
-
-      - name: Upload build evidence
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: DeviceMatrix-build-evidence
           path: |
