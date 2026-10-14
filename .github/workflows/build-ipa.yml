@@ -16,10 +16,10 @@ jobs:
       - name: Install macOS build tools
         run: brew install xcodegen ldid
 
-      - name: Extract source bundle
+      - name: Extract corrected source bundle
         run: |
           mkdir -p src
-          unzip -q DeviceMatrix-cloud-source.zip -d src
+          unzip -q DeviceMatrix-cloud-source-v2.zip -d src
 
       - name: Build one-click IPA
         shell: bash
