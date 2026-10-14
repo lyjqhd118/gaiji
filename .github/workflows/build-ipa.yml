@@ -19,7 +19,7 @@ jobs:
       - name: Extract corrected source bundle
         run: |
           mkdir -p src
-          unzip -q DeviceMatrix-cloud-source-v2.zip -d src
+          unzip -q DeviceMatrix-cloud-source-v3.zip -d src
 
       - name: Build one-click IPA
         shell: bash
